@@ -1,31 +1,58 @@
-Myszkowski Cipher Experiments
+# Crypto Project: Myszkowski Cipher & FNV-1a Hash
 
-This repository contains two different Python implementations of the Myszkowski Cipher, a classic encryption method that moves letters around (transposition) based on a keyword.
-1. Hashed Key Cipher (myszkowski.py)
+This repository contains Python implementations of a custom cipher and a custom hashing function, created entirely from scratch without the use of built-in cryptography libraries (as per assignment constraints).
 
-In this version, we use a Password to lock and unlock a message.
-How it works:
+## 1. Theory behind the Cipher: Myszkowski Transposition
 
-    The Hashed Password: Instead of using your password directly, the code uses a "Digital Blender" (SHA-256 Hash) to turn your password into a long list of random-looking numbers.
+The **Myszkowski cipher** is a classic variant of the columnar transposition cipher, proposed by Émile Victor Portier. 
+In a standard columnar transposition, a predefined keyword determines the order in which columns of the padded plaintext grid are read. If the keyword contains repeated letters (like the two 'O's in "TOMATO"), the standard cipher reads the corresponding columns one by one from left to right.
 
-    The Grid: Your message is written into a table (like an Excel sheet).
+In the **Myszkowski transposition**, repeated letters in the keyword are grouped together. When it is time to read the columns assigned to that repeated letter, the text is read left-to-right, row-by-row across *all* columns sharing that letter's rank. This horizontally weaves the letters, scrambling the text more effectively by breaking up vertical column structures.
 
-    The Scramble: The code looks at the random numbers from your password to decide which columns of the table to pick up first.
+## 2. Theory behind the Hash: Custom FNV-1a (64-bit)
 
-    The Twist: If two columns have the same "priority number," the code reads them horizontally instead of vertically. This makes the code much harder to break than a standard cipher.
+For the hashing requirement, this project implements a custom 64-bit **FNV-1a (Fowler-Noll-Vo)** hash function from scratch.
+The FNV-1a algorithm is designed for fast, consistent, and well-distributed non-cryptographic hashing. It works by:
+1. Initializing a 64-bit hash state with an offset basis (`14695981039346656037`).
+2. Processing each byte of the input text by first XOR-ing the bottom byte of the current hash with the input byte.
+3. Multiplying the resulting hash state by a specific 64-bit FNV prime (`1099511628211`), keeping the bounds to 64-bits.
 
-Use Case: Sending a secret message to a friend where you both know the password.
+This simple and elegant mathematical mechanism provides a rapid avalanche effect, meaning small changes in the message generate vastly different 16-character hexadecimal outputs.
 
+## Instructions to Run the Code
 
-2. Self-Hashing Plaintext (plaintext-hashing.py)
+1. Ensure you have Python 3 installed.
+2. Open your terminal or command prompt.
+3. Run the main testing script:
 
-In this version, we don't use a password. Instead, the message scrambles itself.
-How it works:
+```bash
+python3 test_script.py
+```
 
-    Message as the Key: The code looks at the letters inside your message (like "ALGORITHMS") and uses their alphabetical order to decide the shuffling pattern.
+This script will run through the worked examples natively and demonstrate the full `encrypt -> hash -> decrypt` lifecycle.
 
-    The Square Grid: It automatically calculates the best square-shaped table to fit your message.
+## Worked Examples
 
-    The Fingerprint: Because the message decides its own shuffle, if you change even one letter of the original text, the entire scrambled result will look completely different.
+Below are the successful outputs from executing the `test_script.py`:
 
-Use Case: Creating a "Digital Fingerprint" or a unique ID for a piece of text to see if it has been changed or tampered with.
+### Example 1
+**Original Plaintext**: WE ARE DISCOVERED FLEE AT ONCE
+**Keyword**: TOMATO
+
+1. **Hash of Original Plaintext (FNV-1a)**: `6ff66d61da73932b`
+2. **Ciphertext**: `ROFOXACDTXEDSEEEACXXWEIVRLENEX`
+   - **Hash of Ciphertext in Transit**: `eda824cba33bfcf9`
+3. **Decrypted Text (Padded with X's)**: `WEAREDISCOVEREDFLEEATONCEXXXXX`
+4. **Hash of Decrypted Data (Padded)**: `7379b1ff5cc78519`
+*(Integrity check against original length: True)*
+
+### Example 2
+**Original Plaintext**: THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
+**Keyword**: CRYPTOGRAPHY
+
+1. **Hash of Original Plaintext (FNV-1a)**: `26df64d0f8e9fb94`
+2. **Ciphertext**: `BSDTNRCMZOVGIUAQRXOEOHKFPTYUJLEWOEHX`
+   - **Hash of Ciphertext in Transit**: `c9c5e4411c6f148a`
+3. **Decrypted Text (Padded with X's)**: `THEQUICKBROWNFOXJUMPSOVERTHELAZYDOGX`
+4. **Hash of Decrypted Data (Padded)**: `f7941b16f596dba4`
+*(Integrity check against original length: True)*
